@@ -9,6 +9,7 @@ wheels/
 # Virtual environments
 .venv
 
+*.txt
 Assets
 Media
 *.DS_Store

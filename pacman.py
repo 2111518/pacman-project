@@ -1,9 +1,9 @@
-import pygame
-import math
-from random import randrange
-import random
 import copy
-import os
+import math
+import random
+from random import randrange
+
+import pygame
 
 BoardPath = "Assets/BoardImages/"
 ElementPath = "Assets/ElementImages/"
@@ -69,7 +69,7 @@ PLAYING_KEYS = {
     "up":[pygame.K_w, pygame.K_UP],
     "down":[pygame.K_s, pygame.K_DOWN],
     "right":[pygame.K_d, pygame.K_RIGHT],
-    "left":[pygame.K_a, pygame.K_LEFT]
+    "left":[pygame.K_a, pygame.K_LEFT],
 }
 
 class Game:
@@ -375,7 +375,7 @@ class Game:
         if score == "0":
             score = "00"
         index = 0
-        for i in range(0, len(score)):
+        for i in range(len(score)):
             digit = int(score[i])
             tileImage = pygame.image.load(TextPath + "tile0" + str(32 + digit) + ".png")
             tileImage = pygame.transform.scale(tileImage, (square, square))
@@ -393,7 +393,7 @@ class Game:
         if highScore == "0":
             highScore = "00"
         index = 0
-        for i in range(0, len(highScore)):
+        for i in range(len(highScore)):
             digit = int(highScore[i])
             tileImage = pygame.image.load(TextPath + "tile0" + str(32 + digit) + ".png")
             tileImage = pygame.transform.scale(tileImage, (square, square))
@@ -460,15 +460,9 @@ class Game:
             screen.blit(berrieImage, ((firstBerrie[1] - (2*i)) * square, firstBerrie[0] * square + 5, square, square))
 
     def touchingPacman(self, row, col):
-        if row - 0.5 <= self.pacman.row and row >= self.pacman.row and col == self.pacman.col:
+        if (row - 0.5 <= self.pacman.row and row >= self.pacman.row and col == self.pacman.col) or (row + 0.5 >= self.pacman.row and row <= self.pacman.row and col == self.pacman.col):
             return True
-        elif row + 0.5 >= self.pacman.row and row <= self.pacman.row and col == self.pacman.col:
-            return True
-        elif row == self.pacman.row and col - 0.5 <= self.pacman.col and col >= self.pacman.col:
-            return True
-        elif row == self.pacman.row and col + 0.5 >= self.pacman.col and col <= self.pacman.col:
-            return True
-        elif row == self.pacman.row and col == self.pacman.col:
+        if (row == self.pacman.row and col - 0.5 <= self.pacman.col and col >= self.pacman.col) or (row == self.pacman.row and col + 0.5 >= self.pacman.col and col <= self.pacman.col) or (row == self.pacman.row and col == self.pacman.col):
             return True
         return False
 
@@ -539,7 +533,7 @@ class Game:
         return total
 
     def getHighScore(self):
-        file = open(DataPath + "HighScore.txt", "r")
+        file = open(DataPath + "HighScore.txt")
         highScore = int(file.read())
         file.close()
         return highScore
@@ -700,30 +694,27 @@ class Ghost:
                     ghostImage = pygame.image.load(ElementPath + "tile0" + str(72 + (currentDir - (((self.dir + 3) % 4) * 2))) + ".png")
             else:
                 ghostImage = pygame.image.load(ElementPath + "tile0" + str(72 + (currentDir - (((self.dir + 3) % 4) * 2))) + ".png")
-        else:
-            if self.color == "blue":
-                tileNum = 136 + currentDir
+        elif self.color == "blue":
+            tileNum = 136 + currentDir
+            ghostImage = pygame.image.load(ElementPath + "tile" + str(tileNum) + ".png")
+        elif self.color == "pink":
+            tileNum = 128 + currentDir
+            ghostImage = pygame.image.load(ElementPath + "tile" + str(tileNum) + ".png")
+        elif self.color == "orange":
+            tileNum = 144 + currentDir
+            ghostImage = pygame.image.load(ElementPath + "tile" + str(tileNum) + ".png")
+        elif self.color == "red":
+            tileNum = 96 + currentDir
+            if tileNum < 100:
+                ghostImage = pygame.image.load(ElementPath + "tile0" + str(tileNum) + ".png")
+            else:
                 ghostImage = pygame.image.load(ElementPath + "tile" + str(tileNum) + ".png")
-            elif self.color == "pink":
-                tileNum = 128 + currentDir
-                ghostImage = pygame.image.load(ElementPath + "tile" + str(tileNum) + ".png")
-            elif self.color == "orange":
-                tileNum = 144 + currentDir
-                ghostImage = pygame.image.load(ElementPath + "tile" + str(tileNum) + ".png")
-            elif self.color == "red":
-                tileNum = 96 + currentDir
-                if tileNum < 100:
-                    ghostImage = pygame.image.load(ElementPath + "tile0" + str(tileNum) + ".png")
-                else:
-                    ghostImage = pygame.image.load(ElementPath + "tile" + str(tileNum) + ".png")
 
         ghostImage = pygame.transform.scale(ghostImage, (int(square * spriteRatio), int(square * spriteRatio)))
         screen.blit(ghostImage, (self.col * square + spriteOffset, self.row * square + spriteOffset, square, square))
 
     def isValidTwo(self, cRow, cCol, dist, visited):
-        if cRow < 3 or cRow >= len(gameBoard) - 5 or cCol < 0 or cCol >= len(gameBoard[0]) or gameBoard[cRow][cCol] == 3:
-            return False
-        elif visited[cRow][cCol] <= dist:
+        if cRow < 3 or cRow >= len(gameBoard) - 5 or cCol < 0 or cCol >= len(gameBoard[0]) or gameBoard[cRow][cCol] == 3 or visited[cRow][cCol] <= dist:
             return False
         return True
 
@@ -736,12 +727,9 @@ class Ghost:
             if ghost.row == cRow and ghost.col == cCol and not self.dead:
                 return False
         if not ghostGate.count([cRow, cCol]) == 0:
-            if self.dead and self.row < cRow:
+            if (self.dead and self.row < cRow) or (self.row > cRow and not self.dead and not self.attacked and not game.lockedIn):
                 return True
-            elif self.row > cRow and not self.dead and not self.attacked and not game.lockedIn:
-                return True
-            else:
-                return False
+            return False
         if gameBoard[cRow][cCol] == 3:
             return False
         return True
@@ -751,7 +739,7 @@ class Ghost:
         dirs = [[0, -self.ghostSpeed, 0],
                 [1, 0, self.ghostSpeed],
                 [2, self.ghostSpeed, 0],
-                [3, 0, -self.ghostSpeed]
+                [3, 0, -self.ghostSpeed],
         ]
         random.shuffle(dirs)
         best = 10000
@@ -786,7 +774,7 @@ class Ghost:
         if gameBoard[int(self.row)][int(self.col)] == 4 and not self.dead:
             self.target = [ghostGate[0][0] - 1, ghostGate[0][1]+1]
             return
-        elif gameBoard[int(self.row)][int(self.col)] == 4 and self.dead:
+        if gameBoard[int(self.row)][int(self.col)] == 4 and self.dead:
             self.target = [self.row, self.col]
         elif self.dead:
             self.target = [14, 13]
@@ -818,9 +806,7 @@ class Ghost:
                 quad = 2
             elif self.target[0] > 15 and self.target[1] >= 13:
                 quad = 3
-            if not gameBoard[self.target[0]][self.target[1]] == 3 and not gameBoard[self.target[0]][self.target[1]] == 4:
-                break
-            elif quads[quad] == 0:
+            if (not gameBoard[self.target[0]][self.target[1]] == 3 and not gameBoard[self.target[0]][self.target[1]] == 4) or quads[quad] == 0:
                 break
 
     def move(self):
@@ -892,7 +878,7 @@ def displayLaunchScreen():
         # /
         "tile015.png", "tile042.png", "tile015.png",
         # Nickname
-        "tile013.png", "tile008.png", "tile002.png", "tile010.png", "tile013.png", "tile000.png", "tile012.png", "tile004.png"
+        "tile013.png", "tile008.png", "tile002.png", "tile010.png", "tile013.png", "tile000.png", "tile012.png", "tile004.png",
     ]
     for i in range(len(characterTitle)):
         letter = pygame.image.load(TextPath + characterTitle[i])
@@ -905,26 +891,26 @@ def displayLaunchScreen():
         [
             "tile449.png", "tile015.png", "tile107.png", "tile015.png", "tile083.png", "tile071.png", "tile064.png", "tile067.png", "tile078.png", "tile087.png",
             "tile015.png", "tile015.png", "tile015.png", "tile015.png",
-            "tile108.png", "tile065.png", "tile075.png", "tile072.png", "tile077.png", "tile074.png", "tile089.png", "tile108.png"
+            "tile108.png", "tile065.png", "tile075.png", "tile072.png", "tile077.png", "tile074.png", "tile089.png", "tile108.png",
         ],
         # Pink Ghost
         [
             "tile450.png", "tile015.png", "tile363.png", "tile015.png", "tile339.png", "tile336.png", "tile324.png", "tile324.png", "tile323.png", "tile345.png",
             "tile015.png", "tile015.png", "tile015.png", "tile015.png",
-            "tile364.png", "tile336.png", "tile328.png", "tile333.png", "tile330.png", "tile345.png", "tile364.png"
+            "tile364.png", "tile336.png", "tile328.png", "tile333.png", "tile330.png", "tile345.png", "tile364.png",
         ],
         # Blue Ghost
         [
             "tile452.png", "tile015.png", "tile363.png", "tile015.png", "tile193.png", "tile192.png", "tile211.png", "tile199.png", "tile197.png", "tile213.png", "tile203.png",
             "tile015.png", "tile015.png", "tile015.png",
-            "tile236.png", "tile200.png", "tile205.png", "tile202.png", "tile217.png", "tile236.png"
+            "tile236.png", "tile200.png", "tile205.png", "tile202.png", "tile217.png", "tile236.png",
         ],
         # Orange Ghost
         [
             "tile451.png", "tile015.png", "tile363.png", "tile015.png", "tile272.png", "tile270.png", "tile266.png", "tile260.png", "tile281.png",
             "tile015.png", "tile015.png", "tile015.png", "tile015.png", "tile015.png",
-            "tile300.png", "tile258.png", "tile267.png", "tile281.png", "tile259.png", "tile260.png", "tile300.png"
-        ]
+            "tile300.png", "tile258.png", "tile267.png", "tile281.png", "tile259.png", "tile260.png", "tile300.png",
+        ],
     ]
     for i in range(len(characters)):
         for j in range(len(characters[i])):
