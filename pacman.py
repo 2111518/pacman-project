@@ -14,7 +14,8 @@ MusicPath = "Assets/Music/"
 pygame.mixer.init()
 pygame.init()
 
-# 28 Across 31 Tall 1: Empty Space 2: Tic-Tak 3: Wall 4: Ghost safe-space 5: Special Tic-Tak
+# 28 Across 31 Tall
+# 1: Empty Space 2: Tic-Tak 3: Wall 4: Ghost safe-space 5: Special Tic-Tak
 originalGameBoard = [
     [3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3],
     [3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3],
@@ -61,7 +62,6 @@ spriteOffset = square * (1 - spriteRatio) * (1/2)
 screen = pygame.display.set_mode((width, height))
 pygame.display.flip()
 musicPlaying = 0 # 0: Chomp, 1: Important, 2: Siren
-# pelletColor = (165, 93, 53)
 pelletColor = (222, 161, 133)
 
 PLAYING_KEYS = {
@@ -639,7 +639,6 @@ class Ghost:
         self.deathCount = 0
 
     def update(self) -> None:
-        # print(self.row, self.col)
         if self.target == [-1, -1] or (self.row == self.target[0] and self.col == self.target[1]) or gameBoard[int(self.row)][int(self.col)] == 4 or self.dead:
             self.setTarget()
         self.setDir()
@@ -797,7 +796,6 @@ class Ghost:
                 break
 
     def move(self) -> None:
-        # print(self.target)
         self.lastLoc = [self.row, self.col]
         if self.dir == 0:
             self.row -= self.ghostSpeed
