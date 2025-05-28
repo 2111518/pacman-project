@@ -84,7 +84,7 @@ class Game:
         self.highScore = self.getHighScore()
         self.score = score
         self.level = level
-        self.lives = 3
+        self.lives = 4
         self.ghosts = [Ghost(14.0, 13.5, "red", 0), Ghost(17.0, 11.5, "blue", 1), Ghost(17.0, 13.5, "pink", 2), Ghost(17.0, 15.5, "orange", 3)]
         self.pacman = Pacman(26.0, 13.5) # Center of Second Last Row
         self.total = self.getCount()
@@ -441,7 +441,7 @@ class Game:
     def displayLives(self) -> None:
         # 33 rows || 28 cols
         # Lives[[31, 5], [31, 3], [31, 1]]
-        livesLoc = [[34, 3], [34, 1]]
+        livesLoc = [[34, 5], [34, 3], [34, 1]]
         for i in range(self.lives - 1):
             lifeImage = pygame.image.load(ElementPath + "tile054.png")
             lifeImage = pygame.transform.scale(lifeImage, (int(square * spriteRatio), int(square * spriteRatio)))
