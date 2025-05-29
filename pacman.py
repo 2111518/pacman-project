@@ -918,7 +918,7 @@ def displayLaunchScreen() -> None:
         platform = pygame.transform.scale(platform, (int(square * 2), int(square * 2)))
         screen.blit(platform, ((i * 2) * square, 26 * square, square, square))
     # Credit myself
-    credit = ["tile003.png", "tile004.png", "tile022.png", "tile008.png", "tile013.png", "tile015.png", "tile011.png", "tile004.png", "tile000.png", "tile012.png", "tile025.png", "tile015.png", "tile418.png", "tile416.png", "tile418.png", "tile416.png"]
+    credit = ["tile015.png", "tile164.png", "tile160.png", "tile164.png", "tile015.png", "tile013.png", "tile014.png", "tile020.png", "tile015.png", "tile005.png", "tile014.png", "tile021.png", "tile013.png", "tile003.png", "tile015.png"]
     for i in range(len(credit)):
         letter = pygame.image.load(TextPath + credit[i])
         letter = pygame.transform.scale(letter, (int(square), int(square)))
