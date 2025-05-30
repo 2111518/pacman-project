@@ -854,57 +854,57 @@ def displayLaunchScreen() -> None:
         letter = pygame.transform.scale(letter, (int(square * 4), int(square * 4)))
         screen.blit(letter, ((2 + 4 * i) * square, 2 * square, square, square))
 
-    # Draw Character / Nickname
-    characterTitle = [
-        #Character
-        "tile002.png", "tile007.png", "tile000.png", "tile018.png", "tile000.png", "tile002.png", "tile020.png", "tile004.png", "tile018.png",
-        # /
-        "tile015.png", "tile042.png", "tile015.png",
-        # Nickname
-        "tile013.png", "tile008.png", "tile002.png", "tile010.png", "tile013.png", "tile000.png", "tile012.png", "tile004.png",
-    ]
-    for i in range(len(characterTitle)):
-        letter = pygame.image.load(TextPath + characterTitle[i])
-        letter = pygame.transform.scale(letter, (int(square), int(square)))
-        screen.blit(letter, ((4 + i) * square, 10 * square, square, square))
-
     #Draw Characters and their Nickname
     characters = [
         # Red Ghost
         [
-            "tile449.png", "tile015.png", "tile107.png", "tile015.png", "tile083.png", "tile071.png", "tile064.png", "tile067.png", "tile078.png", "tile087.png",
-            "tile015.png", "tile015.png", "tile015.png", "tile015.png",
-            "tile108.png", "tile065.png", "tile075.png", "tile072.png", "tile077.png", "tile074.png", "tile089.png", "tile108.png",
+            "tile449.png", "tile015.png", "tile107.png", "tile015.png", "tile082.png", "tile068.png", "tile067.png",
         ],
         # Pink Ghost
         [
-            "tile450.png", "tile015.png", "tile363.png", "tile015.png", "tile339.png", "tile336.png", "tile324.png", "tile324.png", "tile323.png", "tile345.png",
-            "tile015.png", "tile015.png", "tile015.png", "tile015.png",
-            "tile364.png", "tile336.png", "tile328.png", "tile333.png", "tile330.png", "tile345.png", "tile364.png",
+            "tile450.png", "tile015.png", "tile171.png", "tile015.png", "tile144.png", "tile136.png", "tile141.png", "tile138.png",
         ],
         # Blue Ghost
         [
-            "tile452.png", "tile015.png", "tile363.png", "tile015.png", "tile193.png", "tile192.png", "tile211.png", "tile199.png", "tile197.png", "tile213.png", "tile203.png",
-            "tile015.png", "tile015.png", "tile015.png",
-            "tile236.png", "tile200.png", "tile205.png", "tile202.png", "tile217.png", "tile236.png",
+            "tile452.png", "tile015.png", "tile235.png", "tile015.png", "tile194.png", "tile217.png", "tile192.png", "tile205.png",
         ],
         # Orange Ghost
         [
-            "tile451.png", "tile015.png", "tile363.png", "tile015.png", "tile272.png", "tile270.png", "tile266.png", "tile260.png", "tile281.png",
-            "tile015.png", "tile015.png", "tile015.png", "tile015.png", "tile015.png",
-            "tile300.png", "tile258.png", "tile267.png", "tile281.png", "tile259.png", "tile260.png", "tile300.png",
+            "tile451.png", "tile015.png", "tile299.png", "tile015.png", "tile270.png", "tile274.png", "tile256.png", "tile269.png", "tile262.png", "tile260.png",
         ],
     ]
     for i in range(len(characters)):
-        for j in range(len(characters[i])):
+        row = characters[i]
+        total_width = 0
+        widths = []
+
+        # 預先計算每個圖像的寬度並計算總寬
+        for j in range(len(row)):
             if j == 0:
-                    letter = pygame.image.load(TextPath + characters[i][j])
-                    letter = pygame.transform.scale(letter, (int(square * spriteRatio), int(square * spriteRatio)))
-                    screen.blit(letter, ((2 + j) * square - square//2, (12 + 2 * i) * square - square//3, square, square))
+                w = int(square * spriteRatio)
             else:
-                letter = pygame.image.load(TextPath + characters[i][j])
-                letter = pygame.transform.scale(letter, (int(square), int(square)))
-                screen.blit(letter, ((2 + j) * square, (12 + 2 * i) * square, square, square))
+                w = int(square)
+            widths.append(w)
+            total_width += w
+
+        # 計算置中的起始X座標
+        start_x = (screen.get_width() - total_width) // 2
+
+        x = start_x
+        for j in range(len(row)):
+            image_path = TextPath + row[j]
+            letter = pygame.image.load(image_path)
+
+            if j == 0:
+                letter = pygame.transform.scale(letter, (widths[j], int(square * spriteRatio)))
+                y = (12 + 2 * i) * square - square // 3
+            else:
+                letter = pygame.transform.scale(letter, (widths[j], int(square)))
+                y = (12 + 2 * i) * square
+
+            screen.blit(letter, (x, y, square, square))
+            x += widths[j]
+
     # Draw Pacman and Ghosts
     event = ["tile449.png", "tile015.png", "tile452.png", "tile015.png",  "tile015.png", "tile448.png", "tile453.png", "tile015.png", "tile015.png", "tile015.png",  "tile453.png"]
     for i in range(len(event)):
