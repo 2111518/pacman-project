@@ -542,7 +542,7 @@ class Pacman:
         self.row = row
         self.col = col
         self.mouthOpen = False
-        self.pacSpeed = 1/4
+        self.pacSpeed = 0.25
         self.mouthChangeDelay = 5
         self.mouthChangeCount = 0
         self.dir = 0 # 0: North, 1: East, 2: South, 3: West
@@ -648,11 +648,11 @@ class Ghost:
             self.attackedCount += 1
 
         if self.attacked and not self.dead:
-            self.ghostSpeed = 1/8
+            self.ghostSpeed = 0.125
 
         if self.attackedCount == self.attackedTimer and self.attacked:
             if not self.dead:
-                self.ghostSpeed = 1/4
+                self.ghostSpeed = 0.25
                 self.row = math.floor(self.row)
                 self.col = math.floor(self.col)
 
@@ -666,7 +666,7 @@ class Ghost:
             if self.deathCount == self.deathTimer:
                 self.deathCount = 0
                 self.dead = False
-                self.ghostSpeed = 1/4
+                self.ghostSpeed = 0.25
 
     def draw(self) -> None: # Ghosts states: Alive, Attacked, Dead Attributes: Color, Direction, Location
         ghostImage = pygame.image.load(ElementPath + "tile152.png")
