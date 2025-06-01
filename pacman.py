@@ -55,7 +55,7 @@ originalGameBoard = [
     [3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3],
 ]
 gameBoard = copy.deepcopy(originalGameBoard)
-spriteRatio = 3/2
+spriteRatio = 1.5
 square = 20 # Size of each unit square
 spriteOffset = square * (1 - spriteRatio) * (1/2)
 (width, height) = (len(gameBoard[0]) * square, len(gameBoard) * square) # Game screen
