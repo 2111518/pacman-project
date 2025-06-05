@@ -37,6 +37,40 @@ class PowerPellet(Pellet):
             self.visible = not self.visible
             self.timer = 0
 
+#修改地方
+class TeleportPellet(Pellet):
+    def __init__(self, row: int, column: int) -> None:
+        super().__init__(row, column)
+        self.name = TELEPORTPELLET
+        self.color = CYAN
+        self.points = 20
+        self.radius = int(8 * TILEWIDTH / 16)  # Enlarged for visibility
+
+class InvisibilityPellet(Pellet):
+    def __init__(self, row: int, column: int) -> None:
+        super().__init__(row, column)
+        self.name = INVISIBILITYPELLET
+        self.color = GREY
+        self.points = 30
+        self.radius = int(8 * TILEWIDTH / 16)  # Enlarged for visibility
+
+# New Pellet Type: SpeedBoostPellet
+class SpeedBoostPellet(Pellet):
+    def __init__(self, row: int, column: int) -> None:
+        super().__init__(row, column)
+        self.name = SPEEDBOOSTPELLET
+        self.color = LIMEGREEN
+        self.points = 25
+        self.radius = int(8 * TILEWIDTH / 16)  # Enlarged for visibility
+
+# New Pellet Type: ScoreMagnetPellet
+class ScoreMagnetPellet(Pellet):
+    def __init__(self, row: int, column: int) -> None:
+        super().__init__(row, column)
+        self.name = SCOREMAGNETPELLET
+        self.color = PURPLE
+        self.points = 15
+        self.radius = int(8 * TILEWIDTH / 16)  # Enlarged for visibility
 
 class PelletGroup:
     def __init__(self, pelletfile) -> None:
@@ -59,6 +93,19 @@ class PelletGroup:
                     pp = PowerPellet(row, col)
                     self.pelletList.append(pp)
                     self.powerpellets.append(pp)
+                #修改地方
+                elif data[row][col] == "T":
+                    tp = TeleportPellet(row, col)
+                    self.pelletList.append(tp)
+                elif data[row][col] == "I":
+                    ip = InvisibilityPellet(row, col)
+                    self.pelletList.append(ip)
+                elif data[row][col] == "S":
+                    sp = SpeedBoostPellet(row, col)
+                    self.pelletList.append(sp)
+                elif data[row][col] == "M":
+                    mp = ScoreMagnetPellet(row, col)
+                    self.pelletList.append(mp)
 
     def readPelletfile(self, textfile):
         return np.loadtxt(textfile, dtype="<U1")
