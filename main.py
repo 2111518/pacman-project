@@ -8,7 +8,7 @@ from fruit import Fruit
 from ghosts import GhostGroup
 from mazedata import MazeData
 from nodes import NodeGroup
-from pacman import Pacman
+from pacman import Pacman, PacmanGun, PacmanShield
 from pauser import Pause
 from pellets import PelletGroup
 from sprites import LifeSprites, MazeSprites
@@ -36,6 +36,49 @@ class GameController:
         self.fruitCaptured = []
         self.fruitNode = None
         self.mazedata = MazeData()
+        self.selected_character = self.character_select()
+
+    def character_select(self) -> int:
+        """顯示角色選擇畫面，回傳選擇的角色編號。"""
+        font = pygame.font.Font("PressStart2P-Regular.ttf", 24)  # 用遊戲內字型
+        options = [
+            {"name": "PACMAN", "img": pygame.image.load("spritesheet_mspacman.png").convert(), "desc": "經典吃豆人"},
+            {"name": "GUN PACMAN", "img": pygame.image.load("pacman_gun.png").convert_alpha(), "desc": "Gun Pacman"},
+            {"name": "SHIELD PACMAN", "img": pygame.image.load("pacman_shield.png").convert_alpha(), "desc": "Shield Pacman"}
+        ]
+        # 縮放角色圖示
+        options[0]["img"] = pygame.transform.scale(options[0]["img"].subsurface(pygame.Rect(8*TILEWIDTH, 0, 2*TILEWIDTH, 2*TILEHEIGHT)), (64, 64))
+        options[1]["img"] = pygame.transform.scale(options[1]["img"], (64, 64))
+        options[2]["img"] = pygame.transform.scale(options[2]["img"], (64, 64))
+        selected = 0
+        clock = pygame.time.Clock()
+        while True:
+            self.screen.fill(BLACK)
+            title = font.render("Select Character", True, YELLOW)
+            title2 = font.render(" (← → switch, Enter)", True, YELLOW)
+            self.screen.blit(title, (SCREENWIDTH//2 - title.get_width()//2, 100))
+            self.screen.blit(title2, (SCREENWIDTH//2 - title2.get_width()//2, 150))
+            for i, opt in enumerate(options):
+                x = SCREENWIDTH//2 - 160 + i*120
+                y = 200
+                border_color = YELLOW if i == selected else WHITE
+                pygame.draw.rect(self.screen, border_color, (x-8, y-8, 80, 80), 4)
+                self.screen.blit(opt["img"], (x, y))
+                desc = font.render(opt["desc"], True, WHITE)
+                self.screen.blit(desc, (x-10, y+70))
+            pygame.display.update()
+            for event in pygame.event.get():
+                if event.type == QUIT:
+                    pygame.quit()
+                    sys.exit()
+                elif event.type == KEYDOWN:
+                    if event.key == K_LEFT:
+                        selected = (selected - 1) % len(options)
+                    elif event.key == K_RIGHT:
+                        selected = (selected + 1) % len(options)
+                    elif event.key == K_RETURN or event.key == K_KP_ENTER:
+                        return selected
+            clock.tick(30)
 
     def setBackground(self) -> None:
         self.background_norm = pygame.surface.Surface(SCREENSIZE).convert()
@@ -54,16 +97,20 @@ class GameController:
         self.nodes = NodeGroup(self.mazedata.obj.name+".txt")
         self.mazedata.obj.setPortalPairs(self.nodes)
         self.mazedata.obj.connectHomeNodes(self.nodes)
-        self.pacman = Pacman(self.nodes.getNodeFromTiles(*self.mazedata.obj.pacmanStart))
+        # 根據選擇建立角色
+        if self.selected_character == 0:
+            self.pacman = Pacman(self.nodes.getNodeFromTiles(*self.mazedata.obj.pacmanStart))
+        elif self.selected_character == 1:
+            self.pacman = PacmanGun(self.nodes.getNodeFromTiles(*self.mazedata.obj.pacmanStart))
+        elif self.selected_character == 2:
+            self.pacman = PacmanShield(self.nodes.getNodeFromTiles(*self.mazedata.obj.pacmanStart))
         self.pellets = PelletGroup(self.mazedata.obj.name+".txt")
         self.ghosts = GhostGroup(self.nodes.getStartTempNode(), self.pacman)
-
         self.ghosts.pinky.setStartNode(self.nodes.getNodeFromTiles(*self.mazedata.obj.addOffset(2, 3)))
         self.ghosts.inky.setStartNode(self.nodes.getNodeFromTiles(*self.mazedata.obj.addOffset(0, 3)))
         self.ghosts.clyde.setStartNode(self.nodes.getNodeFromTiles(*self.mazedata.obj.addOffset(4, 3)))
         self.ghosts.setSpawnNode(self.nodes.getNodeFromTiles(*self.mazedata.obj.addOffset(2, 3)))
         self.ghosts.blinky.setStartNode(self.nodes.getNodeFromTiles(*self.mazedata.obj.addOffset(2, 0)))
-
         self.nodes.denyHomeAccess(self.pacman)
         self.nodes.denyHomeAccessList(self.ghosts)
         self.ghosts.inky.startNode.denyAccess(RIGHT, self.ghosts.inky)
@@ -146,63 +193,26 @@ class GameController:
                         self.showEntities()
                     else:
                         self.textgroup.showText(PAUSETXT)
-                            #self.hideEntities()
+            # 技能啟動與射擊
+            elif event.type == KEYDOWN and hasattr(self.pacman, "ability"):
+                if event.key == pygame.K_j:
+                    if self.pacman.ability.state == "active":
+                        self.pacman.ability.shoot()
+                    elif self.pacman.ability.state == "ready":
+                        self.pacman.ability.activate()
 
     def checkPelletEvents(self) -> None:
         pellet = self.pacman.eatPellets(self.pellets.pelletList)
         if pellet:
             self.pellets.numEaten += 1
-            self.updateScore(pellet.points) 
-            
-            if pellet.name == TELEPORTPELLET:
-                self.pacman.teleport(self.nodes)
-            elif pellet.name == POWERPELLET:
-                self.ghosts.startFreight()
-            elif pellet.name == INVISIBILITYPELLET:
-                invisibility_duration = 5.0 
-                self.pacman.activate_invisibility(invisibility_duration)
-            elif pellet.name == SPEEDBOOSTPELLET:
-                boost_factor = 1.5  
-                boost_duration = 8.0  
-                self.pacman.activate_speed_boost(boost_factor, boost_duration)
-            elif pellet.name == SCOREMAGNETPELLET:
-                magnet_radius_squared = (TILEWIDTH * 4)**2 # Radius of 4 tiles
-                pellets_absorbed_in_event = 0
-                
-                # Iterate over a copy of the pellet list for safe removal
-                for other_pellet in list(self.pellets.pelletList):
-                    if other_pellet is pellet: # Don't absorb the magnet pellet itself (it's handled by the main removal)
-                        continue
-
-                    # Absorb only normal pellets and power pellets
-                    if other_pellet.name == PELLET or other_pellet.name == POWERPELLET:
-                        if other_pellet.visible: # Check if it's an active pellet
-                            dist_sq = (self.pacman.position - other_pellet.position).magnitudeSquared()
-                            if dist_sq <= magnet_radius_squared:
-                                self.updateScore(other_pellet.points)
-                                self.pellets.numEaten += 1 # Increment for game progression logic
-                                pellets_absorbed_in_event +=1
-                                
-                                self.pellets.pelletList.remove(other_pellet)
-                                if other_pellet.name == POWERPELLET and other_pellet in self.pellets.powerpellets:
-                                    self.pellets.powerpellets.remove(other_pellet)
-                
-                # if pellets_absorbed_in_event > 0:
-                #     print(f"ScoreMagnet absorbed {pellets_absorbed_in_event} pellets.")
-
-            # Standard game logic dependent on numEaten (e.g., releasing ghosts)
-            # This will now correctly account for pellets eaten by the magnet
+            self.updateScore(pellet.points)
             if self.pellets.numEaten == 30:
                 self.ghosts.inky.startNode.allowAccess(RIGHT, self.ghosts.inky)
             if self.pellets.numEaten == 70:
                 self.ghosts.clyde.startNode.allowAccess(LEFT, self.ghosts.clyde)
-            
-            # Remove the originally eaten pellet (teleport, power, invisibility, speed, or magnet itself)
-            if pellet in self.pellets.pelletList: # It might have been absorbed if it was another magnet (unlikely setup)
-                self.pellets.pelletList.remove(pellet)
-            if pellet.name == POWERPELLET and pellet in self.pellets.powerpellets:
-                 self.pellets.powerpellets.remove(pellet) # Ensure the main power pellet is removed if it was one
-            
+            self.pellets.pelletList.remove(pellet)
+            if pellet.name == POWERPELLET:
+                self.ghosts.startFreight()
             if self.pellets.isEmpty():
                 self.flashBG = True
                 self.hideEntities()
@@ -210,6 +220,20 @@ class GameController:
 
     def checkGhostEvents(self) -> None:
         for ghost in self.ghosts:
+            # 子彈碰撞
+            if hasattr(self.pacman, "ability"):
+                for bullet in self.pacman.ability.bullets:
+                    if ghost.visible and bullet.rect.colliderect(ghost.image.get_rect(center=ghost.position.asInt())) and ghost.mode.current is not SPAWN:
+                        ghost.startFreight()  # 先進入可吃狀態
+                        ghost.visible = False
+                        self.updateScore(ghost.points)
+                        self.textgroup.addText(str(ghost.points), WHITE, ghost.position.x, ghost.position.y, 8, time=1)
+                        self.ghosts.updatePoints()
+                        self.pause.setPause(pauseTime=1, func=self.showEntities)
+                        ghost.startSpawn()
+                        self.nodes.allowHomeAccess(ghost)
+                        bullet.active = False
+            # 原本的 Pacman 碰撞
             if self.pacman.collideGhost(ghost):
                 if ghost.mode.current is FREIGHT:
                     self.pacman.visible = False
@@ -308,6 +332,10 @@ class GameController:
             x = SCREENWIDTH - self.fruitCaptured[i].get_width() * (i+1)
             y = SCREENHEIGHT - self.fruitCaptured[i].get_height()
             self.screen.blit(self.fruitCaptured[i], (x, y))
+
+        # 顯示技能圖示與倒數
+        if hasattr(self.pacman, "ability"):
+            self.pacman.ability.render(self.screen)
 
         pygame.display.update()
 
