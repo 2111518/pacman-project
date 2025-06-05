@@ -210,6 +210,23 @@ class GameController:
             elif self.state == "CHARACTER_SELECT":
                 # 角色選擇畫面事件在 character_select() 處理
                 return
+            elif self.state == "GAME_RUNNING" and event.type == KEYDOWN and event.key == K_q:
+                # 重設部分狀態，回到角色選擇
+                self.state = "CHARACTER_SELECT"
+                self.pause = Pause(True)
+                self.fruit = None
+                self.level = 0
+                self.lives = 5
+                self.score = 0
+                self.textgroup = TextGroup()
+                self.lifesprites = LifeSprites(self.lives)
+                self.flashBG = False
+                self.flashTimer = 0
+                self.fruitCaptured = []
+                self.fruitNode = None
+                self.mazedata = MazeData()
+                self.selected_character = None
+                return
             elif event.type == KEYDOWN and event.key == K_SPACE:
                 if self.pacman.alive:
                     self.pause.setPause(playerPaused=True)
