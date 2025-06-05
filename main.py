@@ -40,11 +40,12 @@ class GameController:
 
     def character_select(self) -> int:
         """顯示角色選擇畫面，回傳選擇的角色編號。"""
-        font = pygame.font.Font("PressStart2P-Regular.ttf", 24)  # 用遊戲內字型
+        font_en = pygame.font.Font("PressStart2P-Regular.ttf", 16)  # 英文名稱字型（小一點）
+        #font_zh = pygame.font.SysFont("Microsoft JhengHei", 20)  # 中文描述字型
         options = [
-            {"name": "PACMAN", "img": pygame.image.load("spritesheet_mspacman.png").convert(), "desc": "經典吃豆人"},
-            {"name": "GUN PACMAN", "img": pygame.image.load("pacman_gun.png").convert_alpha(), "desc": "Gun Pacman"},
-            {"name": "SHIELD PACMAN", "img": pygame.image.load("pacman_shield.png").convert_alpha(), "desc": "Shield Pacman"}
+            {"name": "CLASSIC", "img": pygame.image.load("spritesheet_mspacman.png").convert(), "desc": "經典吃豆人"},
+            {"name": "GUNNER", "img": pygame.image.load("pacman_gun.png").convert_alpha(), "desc": "Gun Pacman"},
+            {"name": "SHIELD", "img": pygame.image.load("pacman_shield.png").convert_alpha(), "desc": "Shield Pacman"}
         ]
         # 縮放角色圖示
         options[0]["img"] = pygame.transform.scale(options[0]["img"].subsurface(pygame.Rect(8*TILEWIDTH, 0, 2*TILEWIDTH, 2*TILEHEIGHT)), (64, 64))
@@ -54,8 +55,8 @@ class GameController:
         clock = pygame.time.Clock()
         while True:
             self.screen.fill(BLACK)
-            title = font.render("Select Character", True, YELLOW)
-            title2 = font.render(" (← → switch, Enter)", True, YELLOW)
+            title = font_en.render("Select Character", True, YELLOW)
+            title2 = font_en.render(" (← → switch, Enter)", True, YELLOW)
             self.screen.blit(title, (SCREENWIDTH//2 - title.get_width()//2, 100))
             self.screen.blit(title2, (SCREENWIDTH//2 - title2.get_width()//2, 150))
             for i, opt in enumerate(options):
@@ -64,8 +65,12 @@ class GameController:
                 border_color = YELLOW if i == selected else WHITE
                 pygame.draw.rect(self.screen, border_color, (x-8, y-8, 80, 80), 4)
                 self.screen.blit(opt["img"], (x, y))
-                desc = font.render(opt["desc"], True, WHITE)
-                self.screen.blit(desc, (x-10, y+70))
+                # 角色名稱（英文）
+                name = font_en.render(opt["name"], True, WHITE)
+                self.screen.blit(name, (x-10, y+70))
+                # 角色描述（中文或英文）
+                #desc = font_zh.render(opt["desc"], True, (200, 200, 200))
+                #self.screen.blit(desc, (x-10, y+100))
             pygame.display.update()
             for event in pygame.event.get():
                 if event.type == QUIT:
@@ -104,6 +109,7 @@ class GameController:
             self.pacman = PacmanGun(self.nodes.getNodeFromTiles(*self.mazedata.obj.pacmanStart))
         elif self.selected_character == 2:
             self.pacman = PacmanShield(self.nodes.getNodeFromTiles(*self.mazedata.obj.pacmanStart))
+        self.pacman.game = self  # <--- 新增這行，讓pacman能取得game controller
         self.pellets = PelletGroup(self.mazedata.obj.name+".txt")
         self.ghosts = GhostGroup(self.nodes.getStartTempNode(), self.pacman)
         self.ghosts.pinky.setStartNode(self.nodes.getNodeFromTiles(*self.mazedata.obj.addOffset(2, 3)))
@@ -196,7 +202,8 @@ class GameController:
             # 技能啟動與射擊
             elif event.type == KEYDOWN and hasattr(self.pacman, "ability"):
                 if event.key == pygame.K_j:
-                    if self.pacman.ability.state == "active":
+                    # 只有有shoot方法的才呼叫shoot，否則只呼叫activate
+                    if hasattr(self.pacman.ability, "shoot") and self.pacman.ability.state == "active":
                         self.pacman.ability.shoot()
                     elif self.pacman.ability.state == "ready":
                         self.pacman.ability.activate()
@@ -221,7 +228,7 @@ class GameController:
     def checkGhostEvents(self) -> None:
         for ghost in self.ghosts:
             # 子彈碰撞
-            if hasattr(self.pacman, "ability"):
+            if hasattr(self.pacman, "ability") and hasattr(self.pacman.ability, "bullets"):
                 for bullet in self.pacman.ability.bullets:
                     if ghost.visible and bullet.rect.colliderect(ghost.image.get_rect(center=ghost.position.asInt())) and ghost.mode.current is not SPAWN:
                         ghost.startFreight()  # 先進入可吃狀態
@@ -233,7 +240,16 @@ class GameController:
                         ghost.startSpawn()
                         self.nodes.allowHomeAccess(ghost)
                         bullet.active = False
-            # 原本的 Pacman 碰撞
+            # 盾牌技能碰撞（只有技能啟動時才特殊處理）
+            if hasattr(self.pacman, "ability") and hasattr(self.pacman.ability, "on_ghost_collide") and self.pacman.ability.state == "active":
+                if self.pacman.collideGhost(ghost) and ghost.mode.current is not SPAWN:
+                    self.pacman.ability.on_ghost_collide(ghost)
+                    self.updateScore(ghost.points)
+                    self.textgroup.addText(str(ghost.points), WHITE, ghost.position.x, ghost.position.y, 8, time=1)
+                    self.ghosts.updatePoints()
+                    self.pause.setPause(pauseTime=1, func=self.showEntities)
+                    continue  # 技能啟動時不再進行下方一般碰撞判斷
+            # 一般Pacman碰撞（包含PacmanShield未開技能時）
             if self.pacman.collideGhost(ghost):
                 if ghost.mode.current is FREIGHT:
                     self.pacman.visible = False
