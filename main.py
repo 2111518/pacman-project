@@ -36,7 +36,12 @@ class GameController:
         self.fruitCaptured = []
         self.fruitNode = None
         self.mazedata = MazeData()
-        self.selected_character = self.character_select()
+        # 狀態管理: START_MENU, CHARACTER_SELECT, GAME_RUNNING
+        self.state = "START_MENU"
+        # 載入開始畫面圖片
+        self.start_menu_img = pygame.image.load("start_menu.png").convert()
+        self.start_menu_img = pygame.transform.scale(self.start_menu_img, (SCREENWIDTH, SCREENHEIGHT))
+        self.selected_character = None  # 延後到角色選擇才設定
 
     def character_select(self) -> int:
         """顯示角色選擇畫面，回傳選擇的角色編號。"""
@@ -156,6 +161,16 @@ class GameController:
 
     def update(self) -> None:
         dt = self.clock.tick(30) / 1250.0
+        if self.state == "START_MENU":
+            self.checkEvents()
+            self.render()
+            return
+        elif self.state == "CHARACTER_SELECT":
+            self.selected_character = self.character_select()
+            self.state = "GAME_RUNNING"
+            self.startGame()
+            return
+        # 遊戲進行狀態
         self.textgroup.update(dt)
         self.pellets.update(dt)
         if not self.pause.paused:
@@ -165,13 +180,11 @@ class GameController:
             self.checkPelletEvents()
             self.checkGhostEvents()
             self.checkFruitEvents()
-
         if self.pacman.alive:
             if not self.pause.paused:
                 self.pacman.update(dt)
         else:
             self.pacman.update(dt)
-
         if self.flashBG:
             self.flashTimer += dt
             if self.flashTimer >= self.flashTime:
@@ -180,7 +193,6 @@ class GameController:
                     self.background = self.background_flash
                 else:
                     self.background = self.background_norm
-
         afterPauseMethod = self.pause.update(dt)
         if afterPauseMethod is not None:
             afterPauseMethod()
@@ -191,6 +203,13 @@ class GameController:
         for event in pygame.event.get():
             if event.type == QUIT:
                 sys.exit()
+            if self.state == "START_MENU":
+                if event.type == KEYDOWN and event.key == K_SPACE:
+                    self.state = "CHARACTER_SELECT"
+                return
+            elif self.state == "CHARACTER_SELECT":
+                # 角色選擇畫面事件在 character_select() 處理
+                return
             elif event.type == KEYDOWN and event.key == K_SPACE:
                 if self.pacman.alive:
                     self.pause.setPause(playerPaused=True)
@@ -199,6 +218,7 @@ class GameController:
                         self.showEntities()
                     else:
                         self.textgroup.showText(PAUSETXT)
+                        self.hideEntities()
             # 技能啟動與射擊
             elif event.type == KEYDOWN and hasattr(self.pacman, "ability"):
                 if event.key == pygame.K_j:
@@ -375,6 +395,13 @@ class GameController:
         self.textgroup.updateScore(self.score)
 
     def render(self) -> None:
+        if self.state == "START_MENU":
+            self.screen.blit(self.start_menu_img, (0, 0))
+            pygame.display.update()
+            return
+        if self.state != "GAME_RUNNING":
+            # 角色選擇畫面由 character_select() 處理，不需渲染主畫面
+            return
         self.screen.blit(self.background, (0, 0))
         #self.nodes.render(self.screen)
         self.pellets.render(self.screen)
@@ -383,27 +410,22 @@ class GameController:
         self.pacman.render(self.screen)
         self.ghosts.render(self.screen)
         self.textgroup.render(self.screen)
-
         for i in range(len(self.lifesprites.images)):
             x = self.lifesprites.images[i].get_width() * i
             y = SCREENHEIGHT - self.lifesprites.images[i].get_height()
             self.screen.blit(self.lifesprites.images[i], (x, y))
-
         for i in range(len(self.fruitCaptured)):
             x = SCREENWIDTH - self.fruitCaptured[i].get_width() * (i+1)
             y = SCREENHEIGHT - self.fruitCaptured[i].get_height()
             self.screen.blit(self.fruitCaptured[i], (x, y))
-
         # 顯示技能圖示與倒數
         if hasattr(self.pacman, "ability"):
             self.pacman.ability.render(self.screen)
-
         pygame.display.update()
 
 
 if __name__ == "__main__":
     game = GameController()
-    game.startGame()
     while True:
         game.update()
 
